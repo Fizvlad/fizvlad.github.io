@@ -22,7 +22,7 @@ $(document).ready(function () {
         getFullInfo({
             "nickname": $("#player-request-form input[name=player]")[0].value,
             "onSuccess": function (player) {
-                console.log(player);
+                console.log (player);
                 printPlayerFullInfo(player);
                 $("#player-request-form input").removeAttr("disabled");
             },
@@ -45,25 +45,43 @@ function API_url(domain, game, section, subsection) // Returning url for request
     return "https://api.worldoftanks." + domain + "/" + game + "/" + section + "/" + subsection + "/";
 }
 
+function ifBadRequest(data) // Returning false if bad request
+{
+    // console.log ("Checking: ", data);
+    var result = data.status != 200 || data.statusText !== "OK" || data.responseText.match(/\"status\":\"error\"/);
+    if (result) {
+        console.error("Error info: ", data);
+    }
+    return result;
+}
+
 function getUserIdByName(player, options) // Requesting API for list of players. Options={domain:string, onSuccess:function (player){...}, onError:function (msg){...}}
 {
     if (options.domain === "global") { // Searching on every domain (ru->eu->com)
         getUserIdByName(player, { // Check_1
             "domain": "ru",
             "onSuccess": options.onSuccess,
-            "onError": function (msg1) {
-                if (msg1 === "Возникла ошибка при обработке запроса") { // Unsuccesful request
+            "onError": function (msg) {
+                if (msg === "Возникла ошибка при обработке запроса") { // Unsuccesful request
                     options.onError("Возникла ошибка при обработке запроса");
                     return;
                 }
                 getUserIdByName(player, { // Check_2
                     "domain": "eu",
                     "onSuccess": options.onSuccess,
-                    "onError": function (msg2) {
+                    "onError": function (msg) {
+                        if (msg === "Возникла ошибка при обработке запроса") { // Unsuccesful request
+                            options.onError("Возникла ошибка при обработке запроса");
+                            return;
+                        }
                         getUserIdByName(player, { // Check_3
                             "domain": "com",
                             "onSuccess": options.onSuccess,
-                            "onError": function (msg3) {
+                            "onError": function (msg) {
+                                if (msg === "Возникла ошибка при обработке запроса") { // Unsuccesful request
+                                    options.onError("Возникла ошибка при обработке запроса");
+                                    return;
+                                }
                                 options.onError("Игрок не найден");
                             }
                         });
@@ -76,7 +94,7 @@ function getUserIdByName(player, options) // Requesting API for list of players.
             "cache": false,
             "complete": function (data)
             {
-                if (data.status != 200) { // Unsuccesful request
+                if (ifBadRequest(data)) { // Unsuccesful request
                     options.onError("Возникла ошибка при обработке запроса");
                     return;
                 }
@@ -95,6 +113,10 @@ function getUserIdByName(player, options) // Requesting API for list of players.
                 "application_id": APPLICATION_ID,
                 "search": player.nickname
             },
+            "error": function (data)
+            {
+                console.error("Error info: ", data);
+            },
             "method": "GET",
             "url": API_url(options.domain, "wot", "account", "list")
         });
@@ -107,7 +129,7 @@ function getUserInfoById(player, options) // Requesting API for player info. Opt
         "cache": false,
         "complete": function (data)
         {
-            if (data.status != 200) { // Unsuccesful request
+            if (ifBadRequest(data)) { // Unsuccesful request
                 options.onError("Возникла ошибка при обработке запроса");
                 return;
             }
@@ -120,6 +142,10 @@ function getUserInfoById(player, options) // Requesting API for player info. Opt
             "application_id": APPLICATION_ID,
             "account_id": player.account_id
         },
+        "error": function (data)
+        {
+            console.error("Error info: ", data);
+        },
         "method": "GET",
         "url": API_url(player.domain, "wot", "account", "info")
     });
@@ -131,7 +157,7 @@ function getUserTanksById(player, options) // Requesting API for player tanks. O
         "cache": false,
         "complete": function (data)
         {
-            if (data.status != 200) { // Unsuccesful request
+            if (ifBadRequest(data)) { // Unsuccesful request
                 options.onError("Возникла ошибка при обработке запроса");
                 return;
             }
@@ -144,6 +170,10 @@ function getUserTanksById(player, options) // Requesting API for player tanks. O
             "application_id": APPLICATION_ID,
             "account_id": player.account_id
         },
+        "error": function (data)
+        {
+            console.error("Error info: ", data);
+        },
         "method": "GET",
         "url": API_url(player.domain, "wot", "account", "tanks")
     });
@@ -155,7 +185,7 @@ function getClanInfo(player, options) // Requesting API for caln info. Options={
         "cache": false,
         "complete": function (data)
         {
-            if (data.status != 200) { // Unsuccesful request
+            if (ifBadRequest(data)) { // Unsuccesful request
                 options.onError("Возникла ошибка при обработке запроса");
                 return;
             }
@@ -167,6 +197,10 @@ function getClanInfo(player, options) // Requesting API for caln info. Options={
         {
             "application_id": APPLICATION_ID,
             "clan_id": player.info.clan_id
+        },
+        "error": function (data)
+        {
+            console.error("Error info: ", data);
         },
         "method": "GET",
         "url": API_url(player.domain, "wot", "globalmap", "claninfo")
@@ -181,16 +215,16 @@ function getFullInfo(options) // Getting full info. Options={nickname = string, 
     getUserIdByName(player, { // Get id from request
         "domain": "global",
         "onSuccess": function (player) {
-            console.log ("Got account Id: ", player);
+            // console.log ("Got account Id: ", player);
             var answered_requests = 0; // Counting requests. May be done with $.when() but not necessary with little amount of requests
             var total_requests = 2;
             getUserInfoById(player, { // Get info from request
                 "onSuccess": function (player) {
-                    console.log ("Got user info: ", player);
+                    // console.log ("Got user info: ", player);
                     if (player.info.clan_id !== null) { // If player joined any clan
                         getClanInfo(player, {
                             "onSuccess": function (player) {
-                                console.log ("Got user clan: ", player);
+                                // console.log ("Got user clan: ", player);
                                 answered_requests++;
                                 if (answered_requests === total_requests) {
                                     options.onSuccess(player);
@@ -209,7 +243,7 @@ function getFullInfo(options) // Getting full info. Options={nickname = string, 
             });
             getUserTanksById(player, { // Get tanks from request
                 "onSuccess": function (player) {
-                    console.log ("Got user tanks: ", player);
+                    // console.log ("Got user tanks: ", player);
                     answered_requests++;
                     if (answered_requests === total_requests) {
                         options.onSuccess(player);
