@@ -19,7 +19,7 @@ $(document).ready(function() {
         {};
         $("#player-request-result").html(""); // Clear result field
         if (!$("#player-request-form input[name=player]")[0].value.match(/^[A-Za-z0-9_]{3,24}$/)) { // Checking for correct nickname
-            $("#player-request-result").html("Пожалуйста, введите корректное имя");
+            $("#player-request-result").html("Пожалуйста, введите <a class=\"hinted-text\" title=\"От 3 до 24 символов. Только латиница, цифры или знак нижнего подчёркивания\">корректное имя</a>");
             return;
         }
         PLAYER.nickname = $("#player-request-form input[name=player]")[0].value;
@@ -50,8 +50,8 @@ function getUserIdByName(options) // Requesting API for list of players. Options
             "domain": "ru",
             "onSuccess": options.onSuccess,
             "onError": function(msg1) {
-                if (msg1 == "Bad_status") { // Unsuccesful request
-                    options.onError("Bad_status");
+                if (msg1 == "Возникла ошибка при обработке запроса") { // Unsuccesful request
+                    options.onError("Возникла ошибка при обработке запроса");
                     return;
                 }
                 getUserIdByName({ // Check_2
@@ -62,7 +62,7 @@ function getUserIdByName(options) // Requesting API for list of players. Options
                             "domain": "com",
                             "onSuccess": options.onSuccess,
                             "onError": function(msg3) {
-                                options.onError("Not_found");
+                                options.onError("Игрок не найден");
                             }
                         });
                     }
@@ -75,12 +75,12 @@ function getUserIdByName(options) // Requesting API for list of players. Options
             "complete": function(data)
             {
                 if (data.status != 200) { // Unsuccesful request
-                    options.onError("Bad_status");
+                    options.onError("Возникла ошибка при обработке запроса");
                     return;
                 }
                 var playersList = JSON.parse(data.responseText);
                 if (!playersList.data.length || playersList.data[0].nickname.toLowerCase() != PLAYER.nickname.toLowerCase()) { // Got no results or have not found needed player
-                    options.onError("Not_found");
+                    options.onError("Игрок не найден");
                     return;
                 }
                 PLAYER.nickname = playersList.data[0].nickname;
@@ -106,7 +106,7 @@ function getUserInfoById(options) // Requesting API for player info. Options={on
         "complete": function(data)
         {
             if (data.status != 200) { // Unsuccesful request
-                options.onError("Bad_status");
+                options.onError("Возникла ошибка при обработке запроса");
                 return;
             }
             var info = JSON.parse(data.responseText).data[PLAYER.account_id];
@@ -130,7 +130,7 @@ function getUserTanksById(options) // Requesting API for player tanks. Options={
         "complete": function(data)
         {
             if (data.status != 200) { // Unsuccesful request
-                options.onError("Bad_status");
+                options.onError("Возникла ошибка при обработке запроса");
                 return;
             }
             var info = JSON.parse(data.responseText).data[PLAYER.account_id];
@@ -154,7 +154,7 @@ function getClanInfo(options) // Requesting API for caln info. Options={onSucces
         "complete": function(data)
         {
             if (data.status != 200) { // Unsuccesful request
-                options.onError("Bad_status");
+                options.onError("Возникла ошибка при обработке запроса");
                 return;
             }
             var info = JSON.parse(data.responseText).data[PLAYER.info.clan_id];
@@ -230,15 +230,20 @@ function printPlayerFullInfo() // Printing player info
     $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Ник:</span><span class=\"result-item__value\">" + PLAYER.nickname + "</span></div>");
     $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Id:</span><span class=\"result-item__value\">" + PLAYER.account_id + "</span></div>");
     $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Зарегистрировался:</span><span class=\"result-item__value\">" + timestampToDate(PLAYER.info.created_at) + "</span></div>");
-    $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Последний раз был в сети:</span><span class=\"result-item__value\">" + timestampToDate(PLAYER.info.logout_at) + "</span></div>");
+    $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Последний раз был в сети:</span><span class=\"result-item__value\">" + (PLAYER.info.logout_at == 0 ? "Не был в сети" : timestampToDate(PLAYER.info.logout_at)) + "</span></div>");
 
-    $("#player-request-result").append("<div class=\"horizontal-line\"></div>");
 
-    $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Боёв сыграно:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.all.battles + "</span></div>");
-    $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Из них выиграно:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.all.wins + " (" + Math.round(PLAYER.info.statistics.all.wins * 10000 / PLAYER.info.statistics.all.battles) / 100 + "%)</span></div>");
-    $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Противников уничтожено:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.all.frags + "</span></div>");
-    $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Деревьев уничтожено:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.trees_cut + "</span></div>");
-    $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Меткость:</span><span class=\"result-item__value\">" + Math.round(PLAYER.info.statistics.all.hits * 10000 / PLAYER.info.statistics.all.shots) / 100 + "%</span></div>");
+
+    if (PLAYER.info.statistics.all.battles) {
+
+        $("#player-request-result").append("<div class=\"horizontal-line\"></div>");
+
+        $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Боёв сыграно:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.all.battles + "</span></div>");
+        $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Из них выиграно:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.all.wins + " (" + Math.round(PLAYER.info.statistics.all.wins * 10000 / PLAYER.info.statistics.all.battles) / 100 + "%)</span></div>");
+        $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Противников уничтожено:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.all.frags + "</span></div>");
+        $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Деревьев уничтожено:</span><span class=\"result-item__value\">" + PLAYER.info.statistics.trees_cut + "</span></div>");
+        $("#player-request-result").append("<div class=\"result-item\"><span class=\"result-item__key\">Меткость:</span><span class=\"result-item__value\">" + Math.round(PLAYER.info.statistics.all.hits * 10000 / PLAYER.info.statistics.all.shots) / 100 + "%</span></div>");
+    }
 
     if (PLAYER.clan) {
 

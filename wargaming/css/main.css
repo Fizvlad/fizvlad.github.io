@@ -7,6 +7,9 @@
     padding: 10px;
     border: 1px solid #111111;
 }
+.hinted-text {
+    border-bottom: 1px dotted #000000;
+}
 #player-request-result {
     margin-top: 10px;
     padding: 10px;
