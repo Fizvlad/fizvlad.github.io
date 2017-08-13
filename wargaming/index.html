@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>WarGaming API</title>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <script src="js\include\jquery-3.2.1.min.js"></script>
+    <script src="js\player_info.js"></script>
+</head>
+<body>
+    <div class="central-layer">
+        <div class="form-container">
+            <form id="player-request-form">
+                <span>Player name:</span>
+                <input type="text" name="player" autofocus autocomplete="off" patter="[A-Za-z0-9]{3,24}" placeholder="Player name">
+                <input type="button" value="Get information">
+            </form>
+        </div>
+        <div id="player-request-result">
+        </div>
+    </div>
+</body>
+</html>

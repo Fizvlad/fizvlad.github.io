@@ -1,0 +1,20 @@
+#shutter_Container {
+  overflow: hidden;
+  position: static;
+}
+
+.shutter {
+  position: absolute;
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.shutter_Content {
+  opacity: 0;
+  position: absolute;
+}
+
+.shutter_Image {
+  position: absolute;
+}
